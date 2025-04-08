@@ -1,4 +1,5 @@
--- Limpando tabelas existentes
+-- Primeiro dropamos as tabelas de junção e tabelas que dependem de outras
+DROP TABLE IF EXISTS evento_participante;
 DROP TABLE IF EXISTS inscricao;
 DROP TABLE IF EXISTS evento;
 DROP TABLE IF EXISTS participante;
@@ -10,7 +11,10 @@ CREATE TABLE local (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     endereco VARCHAR(200) NOT NULL,
-    capacidade INTEGER NOT NULL
+    cidade VARCHAR(100) NOT NULL,
+    estado VARCHAR(2) NOT NULL,
+    cep VARCHAR(9) NOT NULL,
+    capacidade INT NOT NULL
 );
 
 CREATE TABLE apresentador (
@@ -18,8 +22,8 @@ CREATE TABLE apresentador (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     telefone VARCHAR(20),
-    biografia TEXT,
-    especialidade VARCHAR(100)
+    especialidade VARCHAR(100),
+    biografia TEXT
 );
 
 CREATE TABLE participante (
@@ -27,58 +31,72 @@ CREATE TABLE participante (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     telefone VARCHAR(20),
-    empresa VARCHAR(100)
+    empresa VARCHAR(100),
+    cpf VARCHAR(14) UNIQUE,
+    data_nascimento DATE
 );
 
 CREATE TABLE evento (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(100) NOT NULL,
-    descricao TEXT,
+    descricao VARCHAR(500),
     data_inicio TIMESTAMP NOT NULL,
     data_fim TIMESTAMP NOT NULL,
+    capacidade INT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
     local_id BIGINT,
     apresentador_id BIGINT,
-    capacidade_maxima INTEGER NOT NULL,
-    preco DOUBLE,
     FOREIGN KEY (local_id) REFERENCES local(id),
     FOREIGN KEY (apresentador_id) REFERENCES apresentador(id)
 );
 
 CREATE TABLE inscricao (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    evento_id BIGINT,
-    participante_id BIGINT,
-    data_inscricao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('CONFIRMADA', 'CANCELADA', 'PENDENTE')),
+    evento_id BIGINT NOT NULL,
+    participante_id BIGINT NOT NULL,
+    data_inscricao TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL,
     FOREIGN KEY (evento_id) REFERENCES evento(id),
-    FOREIGN KEY (participante_id) REFERENCES participante(id),
-    UNIQUE(evento_id, participante_id)
+    FOREIGN KEY (participante_id) REFERENCES participante(id)
 );
 
--- Inserindo dados iniciais
-INSERT INTO local (nome, endereco, capacidade) VALUES
-('Auditório Principal', 'Rua das Flores, 123', 200),
-('Sala de Workshop 1', 'Rua das Flores, 123', 30),
-('Sala de Workshop 2', 'Rua das Flores, 123', 30);
+CREATE TABLE evento_participante (
+    evento_id BIGINT NOT NULL,
+    participante_id BIGINT NOT NULL,
+    PRIMARY KEY (evento_id, participante_id),
+    FOREIGN KEY (evento_id) REFERENCES evento(id),
+    FOREIGN KEY (participante_id) REFERENCES participante(id)
+);
 
-INSERT INTO apresentador (nome, email, telefone, biografia, especialidade) VALUES
-('João Silva', 'joao@email.com', '(11) 99999-9999', 'Especialista em Spring Boot com 10 anos de experiência', 'Desenvolvimento Java'),
-('Maria Santos', 'maria@email.com', '(11) 88888-8888', 'Desenvolvedora Front-end sênior', 'React.js');
+-- Insere dados de exemplo
+INSERT INTO local (nome, endereco, cidade, estado, cep, capacidade) VALUES
+('Centro de Convenções', 'Av. Principal, 100', 'São Paulo', 'SP', '01234-567', 500),
+('Auditório Central', 'Rua das Flores, 50', 'Rio de Janeiro', 'RJ', '20000-000', 200),
+('Espaço de Eventos', 'Av. Comercial, 200', 'Belo Horizonte', 'MG', '30000-000', 300);
 
-INSERT INTO participante (nome, email, telefone, empresa) VALUES
-('Pedro Oliveira', 'pedro@email.com', '(11) 77777-7777', 'Tech Solutions'),
-('Ana Costa', 'ana@email.com', '(11) 66666-6666', 'Inovação Digital');
+INSERT INTO apresentador (nome, email, telefone, especialidade, biografia) VALUES
+('João Silva', 'joao.silva@email.com', '(11) 99999-9999', 'Desenvolvimento Web', 'Especialista em desenvolvimento web com 10 anos de experiência'),
+('Maria Santos', 'maria.santos@email.com', '(21) 88888-8888', 'UX/UI Design', 'Consultora de design de interfaces com foco em experiência do usuário'),
+('Pedro Oliveira', 'pedro.oliveira@email.com', '(31) 77777-7777', 'DevOps', 'Especialista em infraestrutura e automação');
 
-INSERT INTO evento (titulo, descricao, data_inicio, data_fim, local_id, apresentador_id, capacidade_maxima, preco) VALUES
-('Workshop de Spring Boot', 'Workshop prático sobre desenvolvimento com Spring Boot', 
- '2024-04-01 09:00:00', '2024-04-01 12:00:00', 1, 1, 50, 100.00),
-('Introdução ao React', 'Curso introdutório sobre React.js', 
- '2024-04-02 14:00:00', '2024-04-02 17:00:00', 2, 2, 30, 150.00),
-('Arquitetura de Software', 'Palestra sobre boas práticas de arquitetura', 
- '2024-04-03 19:00:00', '2024-04-03 21:00:00', 1, 1, 100, 200.00);
+INSERT INTO participante (nome, email, telefone, empresa, cpf, data_nascimento) VALUES
+('Ana Costa', 'ana.costa@email.com', '(11) 98765-4321', 'Empresa A', '123.456.789-00', '1990-05-15'),
+('Carlos Mendes', 'carlos.mendes@email.com', '(21) 98765-4321', 'Empresa B', '987.654.321-00', '1985-08-20'),
+('Julia Lima', 'julia.lima@email.com', '(31) 98765-4321', 'Empresa C', '456.789.123-00', '1995-03-10');
 
-INSERT INTO inscricao (evento_id, participante_id, status) VALUES
-(1, 1, 'CONFIRMADA'),
-(1, 2, 'PENDENTE'),
-(2, 1, 'CONFIRMADA'),
-(3, 2, 'CONFIRMADA'); 
+INSERT INTO evento (titulo, descricao, data_inicio, data_fim, capacidade, valor, local_id, apresentador_id) VALUES
+('Workshop de Spring Boot', 'Aprenda Spring Boot do zero ao avançado', '2024-03-20 14:00:00', '2024-03-20 18:00:00', 50, 199.90, 1, 1),
+('UI/UX Design Patterns', 'Padrões de design para interfaces modernas', '2024-03-25 09:00:00', '2024-03-25 17:00:00', 30, 299.90, 2, 2),
+('DevOps na Prática', 'Implementando CI/CD com Docker e Kubernetes', '2024-04-01 13:00:00', '2024-04-01 17:00:00', 40, 249.90, 3, 3);
+
+INSERT INTO evento_participante (evento_id, participante_id) VALUES
+(1, 1),
+(1, 2),
+(2, 1),
+(3, 2);
+
+INSERT INTO inscricao (evento_id, participante_id, data_inscricao, status) VALUES
+(1, 1, CURRENT_TIMESTAMP, 'CONFIRMADA'),
+(1, 2, CURRENT_TIMESTAMP, 'PENDENTE'),
+(2, 1, CURRENT_TIMESTAMP, 'CONFIRMADA'),
+(3, 2, CURRENT_TIMESTAMP, 'CONFIRMADA'); 

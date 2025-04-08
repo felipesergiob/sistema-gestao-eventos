@@ -1,7 +1,9 @@
 package com.eventos.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "participante")
@@ -21,6 +23,16 @@ public class Participante {
 
     @Column(length = 100)
     private String empresa;
+
+    @Column(length = 14, unique = true)
+    private String cpf;
+
+    @Column(name = "data_nascimento")
+    private LocalDate dataNascimento;
+
+    @JsonIgnore
+    @ManyToMany(mappedBy = "participantes")
+    private Set<Evento> eventos;
 
     // Getters e Setters
     public Long getId() {
@@ -61,5 +73,29 @@ public class Participante {
 
     public void setEmpresa(String empresa) {
         this.empresa = empresa;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    public Set<Evento> getEventos() {
+        return eventos;
+    }
+
+    public void setEventos(Set<Evento> eventos) {
+        this.eventos = eventos;
     }
 } 

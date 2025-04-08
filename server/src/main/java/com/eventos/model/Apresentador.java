@@ -1,11 +1,16 @@
 package com.eventos.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.LocalDateTime;
+import java.util.Set;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "apresentador")
+@JsonIgnoreProperties("eventos")
 public class Apresentador {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,4 +28,8 @@ public class Apresentador {
     private String biografia;
 
     private String especialidade;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "apresentador")
+    private Set<Evento> eventos;
 } 

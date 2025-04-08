@@ -1,76 +1,76 @@
 package com.eventos.controller;
 
-import com.eventos.dto.ParticipanteDTO;
 import com.eventos.model.Participante;
 import com.eventos.repository.ParticipanteRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/participantes")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping(value = "/api/participantes", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin(origins = "*")
 public class ParticipanteController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ParticipanteController.class);
 
     @Autowired
     private ParticipanteRepository participanteRepository;
 
     @GetMapping
-    public List<ParticipanteDTO> listarTodos() {
-        return participanteRepository.findAll().stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+    public List<Participante> listarTodos() {
+        logger.info("Listando todos os participantes");
+        return participanteRepository.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ParticipanteDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<Participante> buscarPorId(@PathVariable Long id) {
+        logger.info("Buscando participante com ID: {}", id);
         return participanteRepository.findById(id)
-                .map(participante -> ResponseEntity.ok(converterParaDTO(participante)))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ParticipanteDTO criar(@RequestBody ParticipanteDTO participanteDTO) {
-        Participante participante = new Participante();
-        participante.setNome(participanteDTO.getNome());
-        participante.setEmail(participanteDTO.getEmail());
-        participante.setTelefone(participanteDTO.getTelefone());
-        participante.setEmpresa(participanteDTO.getEmpresa());
-        return converterParaDTO(participanteRepository.save(participante));
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Participante> criar(@RequestBody Participante participante) {
+        logger.info("Criando novo participante: {}", participante);
+        try {
+            Participante novoParticipante = participanteRepository.save(participante);
+            return ResponseEntity.ok(novoParticipante);
+        } catch (Exception e) {
+            logger.error("Erro ao criar participante: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ParticipanteDTO> atualizar(@PathVariable Long id, @RequestBody ParticipanteDTO participanteDTO) {
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Participante> atualizar(@PathVariable Long id, @RequestBody Participante participanteAtualizado) {
+        logger.info("Atualizando participante com ID: {}", id);
         return participanteRepository.findById(id)
                 .map(participante -> {
-                    participante.setNome(participanteDTO.getNome());
-                    participante.setEmail(participanteDTO.getEmail());
-                    participante.setTelefone(participanteDTO.getTelefone());
-                    participante.setEmpresa(participanteDTO.getEmpresa());
-                    return ResponseEntity.ok(converterParaDTO(participanteRepository.save(participante)));
+                    participante.setNome(participanteAtualizado.getNome());
+                    participante.setEmail(participanteAtualizado.getEmail());
+                    participante.setTelefone(participanteAtualizado.getTelefone());
+                    participante.setEmpresa(participanteAtualizado.getEmpresa());
+                    participante.setCpf(participanteAtualizado.getCpf());
+                    participante.setDataNascimento(participanteAtualizado.getDataNascimento());
+                    return ResponseEntity.ok(participanteRepository.save(participante));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletar(@PathVariable Long id) {
+        logger.info("Deletando participante com ID: {}", id);
         return participanteRepository.findById(id)
                 .map(participante -> {
                     participanteRepository.delete(participante);
                     return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    private ParticipanteDTO converterParaDTO(Participante participante) {
-        ParticipanteDTO dto = new ParticipanteDTO();
-        dto.setId(participante.getId());
-        dto.setNome(participante.getNome());
-        dto.setEmail(participante.getEmail());
-        dto.setTelefone(participante.getTelefone());
-        dto.setEmpresa(participante.getEmpresa());
-        return dto;
     }
 } 

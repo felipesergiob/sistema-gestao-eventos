@@ -23,6 +23,7 @@ export const getEvento = async (id: number) => {
 
 export const createEvento = async (evento: Omit<Evento, 'id'>) => {
   try {
+    console.log('Dados enviados para criação de evento:', JSON.stringify(evento, null, 2));
     const response = await post<Evento>('/api/eventos', evento);
     return response;
   } catch (error) {
@@ -33,6 +34,7 @@ export const createEvento = async (evento: Omit<Evento, 'id'>) => {
 
 export const updateEvento = async (id: number, evento: Partial<Evento>) => {
   try {
+    console.log(`Dados enviados para atualização do evento ${id}:`, JSON.stringify(evento, null, 2));
     const response = await put<Evento>(`/api/eventos/${id}`, evento);
     return response;
   } catch (error) {

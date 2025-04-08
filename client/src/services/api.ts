@@ -3,9 +3,9 @@ import axios from 'axios';
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    },
+        'Content-Type': 'application/json;charset=UTF-8',
+        'Accept': 'application/json'
+    }
 });
 
 // Interceptor para tratamento de erros

@@ -1,11 +1,14 @@
 package com.eventos.dto;
 
+import java.time.LocalDate;
+
 public class ParticipanteDTO {
     private Long id;
     private String nome;
     private String email;
     private String telefone;
-    private String empresa;
+    private LocalDate dataNascimento;
+    private String cpf;
 
     // Getters e Setters
     public Long getId() {
@@ -40,11 +43,19 @@ public class ParticipanteDTO {
         this.telefone = telefone;
     }
 
-    public String getEmpresa() {
-        return empresa;
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
     }
 
-    public void setEmpresa(String empresa) {
-        this.empresa = empresa;
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
     }
 } 

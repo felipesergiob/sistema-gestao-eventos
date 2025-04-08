@@ -1,50 +1,69 @@
 import { Participante } from '../types/api';
-import { get, post, put, del } from './api';
+import api from './api';
 
-export const getParticipantes = async () => {
+export const getParticipantes = async (): Promise<Participante[]> => {
   try {
-    const response = await get<Participante[]>('/api/participantes');
-    return response;
+    const response = await api.get<Participante[]>('/api/participantes');
+    return response.data;
   } catch (error) {
     console.error('Erro ao buscar participantes:', error);
     throw error;
   }
 };
 
-export const getParticipante = async (id: number) => {
+export const getParticipante = async (id: number): Promise<Participante> => {
   try {
-    const response = await get<Participante>(`/api/participantes/${id}`);
-    return response;
+    const response = await api.get<Participante>(`/api/participantes/${id}`);
+    return response.data;
   } catch (error) {
     console.error(`Erro ao buscar participante ${id}:`, error);
     throw error;
   }
 };
 
-export const createParticipante = async (participante: Omit<Participante, 'id'>) => {
+export const createParticipante = async (participante: Omit<Participante, 'id'>): Promise<Participante> => {
   try {
-    const response = await post<Participante>('/api/participantes', participante);
-    return response;
+    // Garantir que a data esteja no formato correto (YYYY-MM-DD)
+    const participanteFormatado = {
+      ...participante,
+      dataNascimento: participante.dataNascimento.split('T')[0]
+    };
+
+    const response = await api.post<Participante>('/api/participantes', participanteFormatado, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
   } catch (error) {
     console.error('Erro ao criar participante:', error);
     throw error;
   }
 };
 
-export const updateParticipante = async (id: number, participante: Partial<Participante>) => {
+export const updateParticipante = async (id: number, participante: Partial<Participante>): Promise<Participante> => {
   try {
-    const response = await put<Participante>(`/api/participantes/${id}`, participante);
-    return response;
+    // Garantir que a data esteja no formato correto (YYYY-MM-DD)
+    const participanteFormatado = {
+      ...participante,
+      dataNascimento: participante.dataNascimento ? participante.dataNascimento.split('T')[0] : undefined
+    };
+
+    const response = await api.put<Participante>(`/api/participantes/${id}`, participanteFormatado, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
   } catch (error) {
     console.error(`Erro ao atualizar participante ${id}:`, error);
     throw error;
   }
 };
 
-export const deleteParticipante = async (id: number) => {
+export const deleteParticipante = async (id: number): Promise<void> => {
   try {
-    const response = await del<void>(`/api/participantes/${id}`);
-    return response;
+    await api.delete(`/api/participantes/${id}`);
   } catch (error) {
     console.error(`Erro ao deletar participante ${id}:`, error);
     throw error;

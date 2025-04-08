@@ -8,6 +8,8 @@ import com.eventos.repository.EventoRepository;
 import com.eventos.repository.LocalRepository;
 import com.eventos.repository.ApresentadorRepository;
 import com.eventos.repository.InscricaoRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/eventos")
 @CrossOrigin(origins = "http://localhost:5173")
 public class EventoController {
+
+    private static final Logger logger = LoggerFactory.getLogger(EventoController.class);
 
     @Autowired
     private EventoRepository eventoRepository;
@@ -34,6 +38,7 @@ public class EventoController {
 
     @GetMapping
     public List<EventoDTO> listarTodos() {
+        logger.info("Listando todos os eventos");
         return eventoRepository.findAll().stream()
                 .map(this::converterParaDTO)
                 .collect(Collectors.toList());
@@ -41,6 +46,7 @@ public class EventoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<EventoDTO> buscarPorId(@PathVariable Long id) {
+        logger.info("Buscando evento com ID: {}", id);
         return eventoRepository.findById(id)
                 .map(evento -> ResponseEntity.ok(converterParaDTO(evento)))
                 .orElse(ResponseEntity.notFound().build());
@@ -48,67 +54,109 @@ public class EventoController {
 
     @PostMapping
     public ResponseEntity<EventoDTO> criar(@RequestBody EventoDTO eventoDTO) {
-        Evento evento = new Evento();
-        evento.setTitulo(eventoDTO.getTitulo());
-        evento.setDescricao(eventoDTO.getDescricao());
-        evento.setDataInicio(eventoDTO.getDataInicio());
-        evento.setDataFim(eventoDTO.getDataFim());
-        
-        if (eventoDTO.getLocal() != null && eventoDTO.getLocal().getId() != null) {
-            Local local = localRepository.findById(eventoDTO.getLocal().getId())
-                    .orElseThrow(() -> new RuntimeException("Local não encontrado"));
-            evento.setLocal(local);
+        logger.info("Criando novo evento: {}", eventoDTO);
+        try {
+            Evento evento = new Evento();
+            evento.setTitulo(eventoDTO.getTitulo());
+            evento.setDescricao(eventoDTO.getDescricao());
+            evento.setDataInicio(eventoDTO.getDataInicio());
+            evento.setDataFim(eventoDTO.getDataFim());
+            
+            if (eventoDTO.getLocal() != null && eventoDTO.getLocal().getId() != null) {
+                logger.info("Buscando local com ID: {}", eventoDTO.getLocal().getId());
+                Local local = localRepository.findById(eventoDTO.getLocal().getId())
+                        .orElseThrow(() -> new RuntimeException("Local não encontrado"));
+                evento.setLocal(local);
+            } else {
+                logger.warn("Local não fornecido ou ID inválido");
+                return ResponseEntity.badRequest().<EventoDTO>build();
+            }
+            
+            if (eventoDTO.getApresentador() != null && eventoDTO.getApresentador().getId() != null) {
+                logger.info("Buscando apresentador com ID: {}", eventoDTO.getApresentador().getId());
+                Apresentador apresentador = apresentadorRepository.findById(eventoDTO.getApresentador().getId())
+                        .orElseThrow(() -> new RuntimeException("Apresentador não encontrado"));
+                evento.setApresentador(apresentador);
+            } else {
+                logger.warn("Apresentador não fornecido ou ID inválido");
+                return ResponseEntity.badRequest().<EventoDTO>build();
+            }
+            
+            evento.setCapacidade(eventoDTO.getCapacidade());
+            evento.setValor(eventoDTO.getValor());
+            
+            Evento eventoSalvo = eventoRepository.save(evento);
+            logger.info("Evento criado com sucesso: {}", eventoSalvo.getId());
+            
+            return ResponseEntity.ok(converterParaDTO(eventoSalvo));
+        } catch (Exception e) {
+            logger.error("Erro ao criar evento: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().<EventoDTO>build();
         }
-        
-        if (eventoDTO.getApresentador() != null && eventoDTO.getApresentador().getId() != null) {
-            Apresentador apresentador = apresentadorRepository.findById(eventoDTO.getApresentador().getId())
-                    .orElseThrow(() -> new RuntimeException("Apresentador não encontrado"));
-            evento.setApresentador(apresentador);
-        }
-        
-        evento.setCapacidadeMaxima(eventoDTO.getCapacidadeMaxima());
-        evento.setPreco(eventoDTO.getPreco());
-        
-        return ResponseEntity.ok(converterParaDTO(eventoRepository.save(evento)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EventoDTO> atualizar(@PathVariable Long id, @RequestBody EventoDTO eventoDTO) {
-        return eventoRepository.findById(id)
-                .map(evento -> {
-                    evento.setTitulo(eventoDTO.getTitulo());
-                    evento.setDescricao(eventoDTO.getDescricao());
-                    evento.setDataInicio(eventoDTO.getDataInicio());
-                    evento.setDataFim(eventoDTO.getDataFim());
-                    
-                    if (eventoDTO.getLocal() != null && eventoDTO.getLocal().getId() != null) {
-                        Local local = localRepository.findById(eventoDTO.getLocal().getId())
-                                .orElseThrow(() -> new RuntimeException("Local não encontrado"));
-                        evento.setLocal(local);
-                    }
-                    
-                    if (eventoDTO.getApresentador() != null && eventoDTO.getApresentador().getId() != null) {
-                        Apresentador apresentador = apresentadorRepository.findById(eventoDTO.getApresentador().getId())
-                                .orElseThrow(() -> new RuntimeException("Apresentador não encontrado"));
-                        evento.setApresentador(apresentador);
-                    }
-                    
-                    evento.setCapacidadeMaxima(eventoDTO.getCapacidadeMaxima());
-                    evento.setPreco(eventoDTO.getPreco());
-                    return ResponseEntity.ok(converterParaDTO(eventoRepository.save(evento)));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        logger.info("Atualizando evento com ID: {}", id);
+        try {
+            return eventoRepository.findById(id)
+                    .map(evento -> {
+                        evento.setTitulo(eventoDTO.getTitulo());
+                        evento.setDescricao(eventoDTO.getDescricao());
+                        evento.setDataInicio(eventoDTO.getDataInicio());
+                        evento.setDataFim(eventoDTO.getDataFim());
+                        
+                        if (eventoDTO.getLocal() != null && eventoDTO.getLocal().getId() != null) {
+                            logger.info("Buscando local com ID: {}", eventoDTO.getLocal().getId());
+                            Local local = localRepository.findById(eventoDTO.getLocal().getId())
+                                    .orElseThrow(() -> new RuntimeException("Local não encontrado"));
+                            evento.setLocal(local);
+                        } else {
+                            logger.warn("Local não fornecido ou ID inválido");
+                            return ResponseEntity.badRequest().<EventoDTO>build();
+                        }
+                        
+                        if (eventoDTO.getApresentador() != null && eventoDTO.getApresentador().getId() != null) {
+                            logger.info("Buscando apresentador com ID: {}", eventoDTO.getApresentador().getId());
+                            Apresentador apresentador = apresentadorRepository.findById(eventoDTO.getApresentador().getId())
+                                    .orElseThrow(() -> new RuntimeException("Apresentador não encontrado"));
+                            evento.setApresentador(apresentador);
+                        } else {
+                            logger.warn("Apresentador não fornecido ou ID inválido");
+                            return ResponseEntity.badRequest().<EventoDTO>build();
+                        }
+                        
+                        evento.setCapacidade(eventoDTO.getCapacidade());
+                        evento.setValor(eventoDTO.getValor());
+                        
+                        Evento eventoAtualizado = eventoRepository.save(evento);
+                        logger.info("Evento atualizado com sucesso: {}", eventoAtualizado.getId());
+                        
+                        return ResponseEntity.ok(converterParaDTO(eventoAtualizado));
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar evento: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().<EventoDTO>build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletar(@PathVariable Long id) {
-        return eventoRepository.findById(id)
-                .map(evento -> {
-                    inscricaoRepository.deleteByEventoId(id);
-                    eventoRepository.delete(evento);
-                    return ResponseEntity.ok().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+        logger.info("Deletando evento com ID: {}", id);
+        try {
+            return eventoRepository.findById(id)
+                    .map(evento -> {
+                        inscricaoRepository.deleteByEventoId(id);
+                        eventoRepository.delete(evento);
+                        logger.info("Evento deletado com sucesso: {}", id);
+                        return ResponseEntity.ok().build();
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            logger.error("Erro ao deletar evento: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     private EventoDTO converterParaDTO(Evento evento) {
@@ -120,8 +168,8 @@ public class EventoController {
         dto.setDataFim(evento.getDataFim());
         dto.setLocal(evento.getLocal());
         dto.setApresentador(evento.getApresentador());
-        dto.setCapacidadeMaxima(evento.getCapacidadeMaxima());
-        dto.setPreco(evento.getPreco());
+        dto.setCapacidade(evento.getCapacidade());
+        dto.setValor(evento.getValor());
         return dto;
     }
 } 
