@@ -7,7 +7,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Sistema de Gestão de Eventos
           </p>
           <p className="text-xs mt-2 text-gray-400">
-            Desenvolvido com React, TypeScript e Tailwind CSS
+            Desenvolvido na cadeira de Requisitos, projeto de software e validação
           </p>
         </div>
       </div>
